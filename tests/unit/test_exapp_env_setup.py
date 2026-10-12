@@ -2360,7 +2360,7 @@ def test_the_claim_gate_fires_on_the_manifest_text(manifest_root: etree._Element
 
 
 def test_no_declared_variable_carries_an_empty_default(manifest_root: etree._Element) -> None:
-    """The shipped state: nine variables, not one default among them."""
+    """The shipped state: thirteen variables, not one default among them."""
     assert variable_problems(manifest_root) == []
 
 
@@ -2390,6 +2390,9 @@ def test_every_variable_the_code_reads_is_declared_in_the_manifest(
 
     Ten became eleven with ``NC_MCP_DISABLED_TOOLS`` (issue #15), declared together with
     the code that reads it, so the lesson of issue #12 is not learned a second time.
+
+    Eleven became thirteen with ``NC_MCP_RESOURCE_ROOT`` and ``NC_MCP_RESOURCE_MAX_BYTES``,
+    declared together with the feature that reads them.
     """
     declared = {
         (variable.findtext("name") or "").strip()
@@ -2408,6 +2411,8 @@ def test_every_variable_the_code_reads_is_declared_in_the_manifest(
         config.ENV_AUDIT_LOG,
         config.ENV_AUDIT_RETENTION_DAYS,
         config.ENV_AUDIT_MAX_BYTES,
+        config.ENV_RESOURCE_ROOT,
+        config.ENV_RESOURCE_MAX_BYTES,
     }
 
 

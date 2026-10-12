@@ -109,6 +109,16 @@ def build_exapp_app(env: Mapping[str, str] | None = None) -> Starlette:
         )
     else:
         logger.info("all tool bundles are on (%s is not set)", config.ENV_DISABLED_TOOLS)
+    resource_root = config.resource_root(env)
+    if resource_root is None:
+        logger.info("MCP resources are off (%s is not set)", config.ENV_RESOURCE_ROOT)
+    else:
+        logger.info(
+            "files are offered as MCP resources from %s, up to %d bytes each (%s)",
+            resource_root,
+            config.resource_max_bytes(env),
+            config.ENV_RESOURCE_ROOT,
+        )
     security = TransportSecuritySettings(
         allowed_hosts=config.allowed_hosts(env),
         enable_dns_rebinding_protection=config.dns_rebinding_protection(env),

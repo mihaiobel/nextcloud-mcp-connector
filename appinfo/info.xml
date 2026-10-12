@@ -470,7 +470,7 @@ Prérequis :
 			</route>
 		</routes>
 		<!--
-		  - The ten variables an administrator may set, and the only way to set them: the
+		  - The thirteen variables an administrator may set, and the only way to set them: the
 		  - deploy daemon injects a variable into the container if, and only if, the
 		  - manifest declares it here (AppAPI ExAppService::getAppInfo, measured in plan
 		  - 03-08). Without the declaration, the "env" option of `occ app_api:app:register`
@@ -520,6 +520,11 @@ Prérequis :
 		  - NC_MCP_DISABLED_TOOLS joins them for issue #15, declared from the start for the
 		  - same reason. No default, the code defaults to every bundle on, and the start of
 		  - the app logs which bundles are switched off.
+		  -
+		  - NC_MCP_RESOURCE_ROOT and NC_MCP_RESOURCE_MAX_BYTES join them with the files as
+		  - MCP resources, for the same reason: the feature is documented for every mode,
+		  - and without the declaration an ExApp installation could never switch it on. No
+		  - default for either, the code defaults to resources off and to 5 MiB.
 		-->
 		<environment-variables>
 			<variable>
@@ -566,6 +571,14 @@ Prérequis :
 				<name>NC_MCP_AUDIT_MAX_BYTES</name>
 				<display-name>Largest size of the record</display-name>
 				<description>The upper bound of the file the record is kept in, in bytes. 100000000, which is 100 MB, unless set otherwise, and a value below 1000000 is refused so that a mistyped size cannot sweep away every entry the moment it is written. When the bound is reached, the oldest entries make way for the new ones.</description>			</variable>
+			<variable>
+				<name>NC_MCP_RESOURCE_ROOT</name>
+				<display-name>Directory served as MCP resources</display-name>
+				<description>A Nextcloud path such as /Documents/AI. Unset means the app offers no resources. When set, the files below this directory can be read by assistants as MCP resources instead of as tool results. The value is read when the app starts.</description>			</variable>
+			<variable>
+				<name>NC_MCP_RESOURCE_MAX_BYTES</name>
+				<display-name>Largest file a resource read returns</display-name>
+				<description>The upper bound of resources/read, in bytes. 5242880, which is 5 MiB, unless set otherwise. A larger file is refused with a pointer to files_download.</description>			</variable>
 		</environment-variables>
 	</external-app>
 </info>

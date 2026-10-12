@@ -330,6 +330,26 @@ def test_the_start_says_so_when_no_directory_binds_the_file_tools(
     )
 
 
+def test_the_start_says_whether_mcp_resources_are_offered(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    with caplog.at_level(logging.INFO, logger="mcp_connector.entry_exapp"):
+        entry_exapp.build_exapp_app(EXAPP_ENV)
+        entry_exapp.build_exapp_app(
+            {
+                **EXAPP_ENV,
+                config.ENV_RESOURCE_ROOT: "/Documents/AI",
+                config.ENV_RESOURCE_MAX_BYTES: "1000",
+            }
+        )
+
+    assert "MCP resources are off (NC_MCP_RESOURCE_ROOT is not set)" in caplog.messages
+    assert (
+        "files are offered as MCP resources from /Documents/AI, up to 1000 bytes each "
+        "(NC_MCP_RESOURCE_ROOT)" in caplog.messages
+    )
+
+
 def test_an_invalid_files_root_stops_the_build(caplog: pytest.LogCaptureFixture) -> None:
     """Fail closed: a sandbox that cannot be read never falls back to the whole files area."""
     with pytest.raises(ToolError) as excinfo:
