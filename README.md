@@ -207,6 +207,10 @@ clients too, with one OAuth connection per person: [docs/n8n-setup.md](docs/n8n-
 When `NC_MCP_FILES_ROOT` is set, `/` becomes that directory for the file tools. For example,
 `/scan.pdf` is resolved under `/Documents/AI`, and no file tool can reach its parent folders.
 
+Clients that only attach files from MCP resources can be served by setting
+`NC_MCP_RESOURCE_ROOT` to a directory. Without it the server offers no resources. See
+[docs/client-setup.md](docs/client-setup.md#files-as-mcp-resources).
+
 ![Connections page with two connected assistants](docs/screenshots/connections-page-v2.png)
 
 ## Privacy

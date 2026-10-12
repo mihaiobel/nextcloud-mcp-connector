@@ -48,6 +48,10 @@ ENV_DISABLE_DNS_REBINDING = "NC_MCP_DISABLE_DNS_REBINDING_PROTECTION"
 ENV_PUBLIC_URL = "NC_MCP_PUBLIC_URL"
 ENV_TALK_SEND = "NC_MCP_TALK_SEND"
 ENV_FILES_ROOT = "NC_MCP_FILES_ROOT"
+# MCP resources: the folder resources/list shows (unset = off) and the largest file read.
+ENV_RESOURCE_ROOT = "NC_MCP_RESOURCE_ROOT"
+ENV_RESOURCE_MAX_BYTES = "NC_MCP_RESOURCE_MAX_BYTES"
+DEFAULT_RESOURCE_MAX_BYTES = 5 * 1024 * 1024
 # Comma separated tool bundle names whose tools are not registered (issue #15).
 ENV_DISABLED_TOOLS = "NC_MCP_DISABLED_TOOLS"
 
@@ -312,6 +316,27 @@ def files_root(env: Mapping[str, str] | None = None) -> str:
     """Return the configured virtual root for every Nextcloud file operation."""
     source = os.environ if env is None else env
     return normalize_files_root(source.get(ENV_FILES_ROOT, "/"))
+
+
+def resource_root(env: Mapping[str, str] | None = None) -> str | None:
+    """Return the folder behind the MCP resources, or ``None`` when they are switched off."""
+    source = os.environ if env is None else env
+    raw = source.get(ENV_RESOURCE_ROOT, "").strip()
+    return raw or None
+
+
+def resource_max_bytes(env: Mapping[str, str] | None = None) -> int:
+    """Return the largest file ``resources/read`` hands out; a bad value stops the call."""
+    source = os.environ if env is None else env
+    raw = source.get(ENV_RESOURCE_MAX_BYTES, "").strip()
+    if not raw:
+        return DEFAULT_RESOURCE_MAX_BYTES
+    if not raw.isdecimal() or int(raw) < 1:
+        raise ToolError(
+            message=f"{ENV_RESOURCE_MAX_BYTES} must be a positive number of bytes.",
+            hint=f"Use a value such as {DEFAULT_RESOURCE_MAX_BYTES}, or unset it for the default.",
+        )
+    return int(raw)
 
 
 def disabled_bundles(known: Iterable[str], env: Mapping[str, str] | None = None) -> frozenset[str]:

@@ -13,6 +13,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- MCP resources for files, off until `NC_MCP_RESOURCE_ROOT` names a directory.
+  `resources/list` shows its files, `nextcloud://files/{+path}` reads any file inside the
+  files sandbox as a base64 blob. Files above `NC_MCP_RESOURCE_MAX_BYTES` (5 MiB by default)
+  are refused with a pointer to `files_download`.
 - SECURITY.md with the two private reporting channels, CONTRIBUTING.md, issue
   and pull request templates, and THIRD-PARTY.md with the licences of the
   shipped dependencies.

@@ -26,7 +26,6 @@ from collections.abc import Awaitable, Callable
 from typing import Any
 
 import httpx
-from mcp.server import MCPServer
 from mcp.types import ToolAnnotations
 
 from .. import __version__, config, deps
@@ -37,6 +36,7 @@ from ..errors import (
     REASON_UNSPECIFIED,
     ToolError,
 )
+from .resources import ResourceServer
 
 __all__ = ["CREATE_ONLY", "READ_ONLY", "bundle_names", "compact", "graceful", "mcp"]
 
@@ -46,7 +46,7 @@ _token_verifier, _auth_settings = deps.build_auth()
 
 # The handshake version a client sees in serverInfo derives from the package version,
 # so the three-places release gate covers it transitively via __version__.
-mcp = MCPServer(
+mcp = ResourceServer(
     "MCP Connector",
     version=__version__,
     instructions=(

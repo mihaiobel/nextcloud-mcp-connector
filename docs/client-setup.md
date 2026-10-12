@@ -192,6 +192,24 @@ still apply. Upload staging is isolated by destination and configured root; afte
 from the original chunk-upload implementation, restart any unfinished uploads with a new
 upload ID. Existing completed files are unaffected.
 
+### Files as MCP resources
+
+Some clients only attach a file to their code sandbox when it arrives as an MCP resource,
+not as a tool result. `NC_MCP_RESOURCE_ROOT` switches that on for one Nextcloud directory,
+for example `/Documents/AI`. Without it `resources/list` is empty, no template is advertised
+and `resources/read` refuses every URI.
+
+- `resources/list` names the files of that directory and two folder levels below it, at most
+  200, with name, MIME type and size.
+- `nextcloud://files/{+path}` is the same URI scheme `files_download` uses. Any file inside
+  the sandbox can be read that way, also outside the listed directory.
+- `resources/read` returns the whole file as a base64 blob without a `data:` prefix.
+- `NC_MCP_RESOURCE_MAX_BYTES` is the size limit, 5 MiB by default. A larger file is refused
+  with a message that points to `files_download`.
+- `NC_MCP_FILES_ROOT`, the `kein-ki` tag and Nextcloud permissions apply as for the file
+  tools, and `..` and absolute paths are rejected. In the HTTP and OAuth modes a resource is
+  read with the credentials of the calling user.
+
 Each bare name is expanded into two entries, `example.com` and `example.com:*`, because a
 client that was given a port puts the port into the `Host` header. A name that already
 carries a port or a wildcard is taken exactly as written.

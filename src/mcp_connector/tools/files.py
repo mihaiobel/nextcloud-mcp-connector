@@ -19,6 +19,7 @@ could turn it into a replace is refused before the request or by Nextcloud itsel
 
 import asyncio
 import base64
+import mimetypes
 import re
 import uuid
 from collections.abc import Mapping
@@ -50,6 +51,12 @@ HARD_DOWNLOAD_BYTES = 8 * 1024 * 1024
 HARD_UPLOAD_CHUNK_BYTES = 8 * 1024 * 1024
 MIN_UPLOAD_CHUNK_BYTES = 5 * 1024 * 1024
 MAX_UPLOAD_CHUNKS = 10_000
+
+#: ``resources/list`` goes this many folder levels below the root and shows at most this many
+#: files; any other file stays reachable through the URI template.
+RESOURCE_LIST_DEPTH = 2
+RESOURCE_LIST_LIMIT = 200
+DEFAULT_BINARY_TYPE = "application/octet-stream"
 
 DEFAULT_SEARCH_LIMIT = 25
 #: Nextcloud's own default cap for a search without an explicit limit. Going past it would
@@ -588,6 +595,65 @@ async def download(
     if result["truncated"]:
         result["next_offset"] = offset + len(data)
     return result
+
+
+async def list_resources(clients: NcClients, root: str, max_bytes: int) -> list[dict[str, Any]]:
+    """The files for ``resources/list``, breadth first; files above ``max_bytes`` are left out."""
+    folders = [(dav.safe_path(root), 0)]
+    files: list[dict[str, Any]] = []
+    while folders and len(files) < RESOURCE_LIST_LIMIT:
+        folder, depth = folders.pop(0)
+        cursor: str | None = None
+        while True:
+            page = await list_dir(clients, folder, limit=MAX_LIST_LIMIT, cursor=cursor)
+            for item in page["items"]:
+                if item["kind"] == "folder":
+                    if depth < RESOURCE_LIST_DEPTH:
+                        folders.append((item["path"], depth + 1))
+                elif (item["size"] or 0) <= max_bytes:
+                    files.append(item)
+            cursor = page.get("next")
+            if not cursor:
+                break
+    return files[:RESOURCE_LIST_LIMIT]
+
+
+async def read_resource(clients: NcClients, path: str, max_bytes: int) -> dict[str, Any]:
+    """Read one whole file for ``resources/read``; the size check runs before any GET."""
+    target = dav.safe_path(path)
+    info = await _visible_stat(clients, target)
+    if info["is_collection"]:
+        raise ToolError(
+            message=f"{target} is a folder, not a file.",
+            hint="Use files_list to choose a file inside the folder.",
+        )
+    size = info["size"]
+    if size > max_bytes:
+        raise ToolError(
+            message=f"{target} is {size} bytes, above the {max_bytes} byte resource limit.",
+            hint="Use files_download to retrieve the raw file in chunks.",
+            reason=REASON_GUARD_TRIPPED,
+        )
+    data = b""
+    if size:
+        data = (await dav.get_range(clients.client, clients.creds, target, offset=0, limit=size))[
+            :size
+        ]
+    if len(data) != size:
+        raise ToolError(
+            message=f"Nextcloud returned {len(data)} of {size} bytes of {target}.",
+            hint="Retry the read. If it repeats, use files_download.",
+        )
+    return {"path": target, "content_type": resource_content_type(info), "content": data}
+
+
+def resource_content_type(entry: Mapping[str, Any]) -> str:
+    """The MIME type Nextcloud reports, else a guess from the file name."""
+    reported = str(entry.get("content_type") or "")
+    if reported and reported != DEFAULT_BINARY_TYPE:
+        return reported
+    path = entry.get("path") or entry.get("name") or ""
+    return mimetypes.guess_type(str(path))[0] or DEFAULT_BINARY_TYPE
 
 
 async def upload(
